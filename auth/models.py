@@ -7,7 +7,7 @@ import settings
 # Creating connection with arangoDB
 conn = Connection(arangoURL=settings.ARANGODB_HOST, username=settings.ARANGODB_USERNAME, password=settings.ARANGODB_PASSWORD)
 # Selecting database
-db = conn["scorerdude"]
+db = conn["mydatabase"]
 # Selecting collections for auth users
 collection = db["users"]
 
