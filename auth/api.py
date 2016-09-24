@@ -1,6 +1,8 @@
-# from flask import abort, request
+from flask import jsonify
 from flask_restful import reqparse, abort, Resource
 from models import User
+from auth import auth
+from app import g
 
 parser = reqparse.RequestParser()
 parser.add_argument('username', type=str)
@@ -21,3 +23,9 @@ class Users(Resource):
         user = User.create(username=username, password=password)
 
         return {"username": user.username}
+
+
+@auth.login_required
+def get_auth_token():
+    token = g.user.generate_auth_token()
+    return jsonify({'token': token.decode('ascii')})

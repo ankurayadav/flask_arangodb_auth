@@ -1,11 +1,16 @@
 # python
 from pyArango.connection import Connection
 from passlib.apps import custom_app_context as pwd_context
+from itsdangerous import (TimedJSONWebSignatureSerializer
+                          as Serializer, BadSignature, SignatureExpired)
 
+from app import app
 import settings
 
 # Creating connection with arangoDB
-conn = Connection(arangoURL=settings.ARANGODB_HOST, username=settings.ARANGODB_USERNAME, password=settings.ARANGODB_PASSWORD)
+conn = Connection(arangoURL=settings.ARANGODB_HOST,
+                  username=settings.ARANGODB_USERNAME,
+                  password=settings.ARANGODB_PASSWORD)
 # Selecting database
 db = conn[settings.ARANGODB_DATABASE]
 # Selecting collections for auth users
@@ -45,6 +50,22 @@ class User(object):
             ret_user.password_hash = record["password_hash"]
 
         return ret_user
+
+    def generate_auth_token(self, expiration=600):
+        s = Serializer(app.config['SECRET_KEY'], expires_in=expiration)
+        return s.dumps({'key': self.key})
+
+    @staticmethod
+    def verify_auth_token(token):
+        s = Serializer(app.config['SECRET_KEY'])
+        try:
+            data = s.loads(token)
+        except SignatureExpired:
+            return None # valid token, but expired
+        except BadSignature:
+            return None # invalid token
+        user = User.get({"_key": data['key']})
+        return user
 
 # Function to generate password_hash for given password
 def hash_password(password):
